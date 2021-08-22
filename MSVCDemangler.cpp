@@ -185,24 +185,24 @@ MSVCDemangler::MSVCDemangler()
 	thunkAccesses["D"].insert(make_pair("", "private: static"));
 	thunkAccesses["E"].insert(make_pair("", "private: virtual"));
 	thunkAccesses["F"].insert(make_pair("", "private: virtual"));
-	thunkAccesses["G"].insert(make_pair("", "private: thunk"));
-	thunkAccesses["H"].insert(make_pair("", "private: thunk"));
+	thunkAccesses["G"].insert(make_pair("", "[thunk]:private: virtual"));
+	thunkAccesses["H"].insert(make_pair("", "[thunk]:private: virtual"));
 	thunkAccesses["I"].insert(make_pair("", "protected:"));
 	thunkAccesses["J"].insert(make_pair("", "protected:"));
 	thunkAccesses["K"].insert(make_pair("", "protected: static"));
 	thunkAccesses["K"].insert(make_pair("", "protected: static"));
 	thunkAccesses["M"].insert(make_pair("", "protected: virtual"));
 	thunkAccesses["N"].insert(make_pair("", "protected: virtual"));
-	thunkAccesses["O"].insert(make_pair("", "protected: thunk"));
-	thunkAccesses["P"].insert(make_pair("", "protected: thunk"));
+	thunkAccesses["O"].insert(make_pair("", "[thunk]:protected: virtual"));
+	thunkAccesses["P"].insert(make_pair("", "[thunk]:protected: virtual"));
 	thunkAccesses["Q"].insert(make_pair("", "public:"));
 	thunkAccesses["R"].insert(make_pair("", "public:"));
 	thunkAccesses["S"].insert(make_pair("", "public: static"));
 	thunkAccesses["T"].insert(make_pair("", "public: static"));
 	thunkAccesses["U"].insert(make_pair("", "public: virtual"));
 	thunkAccesses["V"].insert(make_pair("", "public: virtual"));
-	thunkAccesses["W"].insert(make_pair("", "public: thunk"));
-	thunkAccesses["X"].insert(make_pair("", "public: thunk"));
+	thunkAccesses["W"].insert(make_pair("", "[thunk]:public: virtual"));
+	thunkAccesses["X"].insert(make_pair("", "[thunk]:public: virtual"));
 	thunkAccesses["Y"].insert(make_pair("", ""));
 	thunkAccesses["Z"].insert(make_pair("", ""));
 	thunkAccesses["0"].insert(make_pair("VAR", "private: static"));
@@ -538,6 +538,17 @@ string MSVCDemangler::DemangleFunctionSymbol(vector<string> names, DemangleData*
 	string thunk = result.begin()->first;
 	string access = result.begin()->second;
 
+	string adjustor;
+
+	if (access.length() > 8 && access.starts_with("[thunk]:"))
+	{
+		size_t offset = string("0123456789").find(data->GetValue()[0]) + 1;
+		adjustor = "`adjustor{" + to_string(offset) + "}'";
+
+		data->Advance(1);
+		data->Log("MOD=%s", adjustor.c_str());
+	}
+
 	if (thunk == "vtordisp")
 	{
 		for (int i = 0; i < 2; i++)
@@ -593,7 +604,7 @@ string MSVCDemangler::DemangleFunctionSymbol(vector<string> names, DemangleData*
 		access += " ";
 	}
 
-	get<0>(result2).Add(" " + get<1>(result2) + name + get<2>(result2) + cv);
+	get<0>(result2).Add(" " + get<1>(result2) + name + adjustor + get<2>(result2) + cv);
 
 	return prefix + access + get<0>(result2).GetValue();
 }
